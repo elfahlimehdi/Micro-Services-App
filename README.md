@@ -1,4 +1,4 @@
-﻿# E-commerce Microservices Suite
+# Vue globale du projet 
 
 Ensemble Spring Cloud (Eureka, Config Server, Gateway, microservices metier) + front Angular. Ce repo contient tout le stack : services Java, depot de config et UI.
 
