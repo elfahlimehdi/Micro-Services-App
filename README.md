@@ -2,7 +2,7 @@
 
 Ensemble Spring Cloud (Eureka, Config Server, Gateway, microservices metier) + front Angular. Ce repo contient tout le stack : services Java, depot de config et UI.
 
-## Contenu du depot
+## Contenu du Repo
 - discovery-service/ : serveur Eureka (8761).
 - config-service/ : Spring Cloud Config Server (9999) avec backend natif `config-repo/`.
 - config-repo/ : fichiers de configuration charges au demarrage.
