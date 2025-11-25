@@ -1,141 +1,155 @@
-# Suite de microservices e-commerce
+﻿# E-commerce Microservices Suite
 
-Ensemble Spring Cloud + front Angular : découverte de services, configuration centralisée, passerelle d'API et orchestration de facturation.
+Ensemble Spring Cloud (Eureka, Config Server, Gateway, microservices metier) + front Angular. Ce repo contient tout le stack : services Java, depot de config et UI.
 
-## Vue d'ensemble
-- Découverte : `discovery-service` (Eureka) pour l'enregistrement et la recherche.
-- Configuration : `config-service` avec dépôt natif `config-repo`.
-- Passerelle : `gateway-service` (Spring Cloud Gateway) devant les services métiers.
-- Services métiers :
-  - `customer-service` : CRUD clients via Spring Data REST, données d'exemple au démarrage.
-  - `inventory-service` : CRUD produits via Spring Data REST, données d'exemple au démarrage.
-  - `billing-service` : agrège clients/produits, crée des factures avec OpenFeign.
-- Front-end : `ecom-web-app` (Angular Material) consommant les APIs via la passerelle.
+## Contenu du depot
+- discovery-service/ : serveur Eureka (8761).
+- config-service/ : Spring Cloud Config Server (9999) avec backend natif `config-repo/`.
+- config-repo/ : fichiers de configuration charges au demarrage.
+- gateway-service/ : Spring Cloud Gateway (8888) avec discovery locator active.
+- customer-service/ : Spring Data REST + H2, clients d'exemple (8081).
+- inventory-service/ : Spring Data REST + H2, produits d'exemple (8083).
+- billing-service/ : Spring Web + JPA + OpenFeign, facture en se basant sur customers/products (8082).
+- ecom-web-app/ : front Angular Material (dev server 4200) qui consomme via la gateway.
+- .mvn/, pom.xml : build Maven parent.
 
-## Schéma d'architecture
-```mermaid
-graph TD
-    UI[Front Angular\n(ecom-web-app)] -->|HTTP| GW[API Gateway\n(8888)]
-    GW --> CUS[customer-service\n(8081)]
-    GW --> INV[inventory-service\n(8083)]
-    GW --> BIL[billing-service\n(8082)]
+## Architecture (texte)
+- Decouverte : tous les services (gateway incluse) s'enregistrent dans Eureka.
+- Configuration : config-service sert les properties depuis `../config-repo`.
+- Routage : gateway utilise le discovery locator (IDs en lowercase) pour exposer `/customer-service/**`, `/inventory-service/**`, `/billing-service/**`.
+- Donnees : chaque service utilise H2 en memoire, population d'exemple au demarrage (donnees perdues apres restart).
+- Communication : billing-service appelle customer/inventory via OpenFeign.
 
-    CUS --- EKA[discovery-service\n(Eureka 8761)]
-    INV --- EKA
-    BIL --- EKA
-    GW --- EKA
-
-    CFG[config-service\n(9999)] --> REP[config-repo\n(fichiers natifs)]
-    CFG -. config -> CUS
-    CFG -. config -> INV
-    CFG -. config -> BIL
-    CFG -. config -> GW
+### Vue globale (front + backend)
+```
+                         +--------------------------+
+                         |  ecom-web-app (4200)     |
+                         |  Angular / Material      |
+                         +------------+-------------+
+                                      |
+                                      v
+                         +------------+-------------+
+                         | gateway-service (8888)   |
+                         | Spring Cloud Gateway     |
++------------------------+----+----------+----+-----------------------+
+|                             |          |                          |
+|                             |          |                          |
+|                             |          |                          |
+|                             v          v                          v
+|                    +--------+--+  +----+-------+         +--------+--------+
+|                    |customer   |  |inventory  |         | billing-service  |
+|                    |service    |  |service    |         | (8082) Feign     |
+|                    |(8081) REST|  |(8083) REST|         | vers cust/inv    |
+|                    +-----+-----+  +----+------+         +---------+--------+
+|                          |             |                          |
++--------------------------+-------------+--------------------------+--------+
+                           |             |                          |
+                           v             v                          v
+                   discovery-service  discovery-service      discovery-service
+                     (8761, Eureka)    (8761, Eureka)         (8761, Eureka)
+                           |             |                          |
+                           +-------------+--------------------------+
+                                         |
+                                         v
+                             config-service (9999)
+                             backend natif: config-repo
 ```
 
-## Structure du dépôt
+### Diagramme de classes (par service)
 ```
-ecom-app-bdcc-ii/
-- config-repo/         (fichiers de config consommés par config-service)
-- config-service/      (Config Server)
-- discovery-service/   (Eureka Server)
-- gateway-service/     (API Gateway)
-- customer-service/    (service clients)
-- inventory-service/   (service produits)
-- billing-service/     (service facturation)
-- ecom-web-app/        (UI Angular)
-- src/                 (stub IntelliJ, non utilisé)
+Customer-service (8081)           Inventory-service (8083)         Billing-service (8082)
++-----------+                     +-----------+                    +-----------+
+| Customer  |                     | Product   |                    | Bill      |
++-----------+                     +-----------+                    +-----------+
+| id  (PK)  |                     | id  (PK)  |                    | id (PK)   |
+| name      |                     | name      |                    | billingDate|
+| email     |                     | price     |                    | customerId |
++-----------+                     | quantity  |                    +-----------+
+                                  +-----------+                    | ProductItem|
+                                                                  | id (PK)    |
+Associations (cross-services)                                    | productId  |
+- Bill.customerId -> Customer (Feign)                            | billId     |
+- ProductItem.productId -> Product (Feign)                       | quantity   |
+- Bill 1..* ProductItem (JPA)                                    | unitPrice  |
+                                                                  +-----------+
 ```
 
-## Détail des services
+### Diagramme de sequence (creation d'une facture)
+```
+Front (ecom-web-app)
+    |
+    | POST /bills { customerId, items[] } via gateway
+    v
+Gateway (8888)
+    |
+    | route -> billing-service /bills
+    v
+Billing-service (8082)
+    |-- GET /customers/{id} ------------------> Customer-service (8081)
+    |<--------------------- customer ----------|
+    |-- GET /products/{id} pour chaque item --> Inventory-service (8083)
+    |<--------------------- product -----------|
+    | persiste Bill + ProductItems (H2)
+    | enrichit la reponse (customer + products)
+    v
+Gateway
+    v
+Front (affiche la facture)
+```
 
-### discovery-service
-- Stack : Spring Boot 3.5.x, Spring Cloud 2025.x (Eureka Server).
-- Port : 8761.
-- Rôle : registre des clients. Pas de base de données.
+## Prerequis
+- Java 21
+- Maven 3.9+
+- Node.js 20+ et npm
+- Ports libres : 8761, 8888, 9999, 8081, 8082, 8083, 4200.
 
-### config-service
-- Stack : Spring Boot 3.5.x, Spring Cloud Config Server.
-- Port : 9999.
-- Backend : dépôt natif `../config-repo`.
-- Contenu : propriétés globales et spécifiques par service (`customer-service.properties`, `inventory-service.properties`, `billing-service.properties`, variantes dev/prod).
+## Demarrage local (par ordre )
+Ouvrir plusieurs terminaux depuis la racine du projet.
 
-### gateway-service
-- Stack : Spring Cloud Gateway, client Eureka.
-- Port : 8888.
-- Routage : locator de découverte (`DiscoveryClientRouteDefinitionLocator`). Activer `spring.cloud.gateway.discovery.locator.enabled=true` et `spring.cloud.gateway.discovery.locator.lower-case-service-id=true` pour exposer `/customer-service/**`, `/inventory-service/**`, `/billing-service/**`.
+1) Discovery :
+```bash
+cd discovery-service
+mvn spring-boot:run
+```
 
-### customer-service
-- Stack : Spring Data REST, JPA (H2 en mémoire), clients Eureka/Config.
-- Port : 8081.
-- Données : 3 clients pré-chargés au démarrage.
-- API : `/api/customers` (IDs exposées). Projections `all` et `email`.
-- Bonus : `/testConfig1`, `/testConfig2` pour vérifier la config externalisée.
+2) Config :
+```bash
+cd config-service
+mvn spring-boot:run
+```
 
-### inventory-service
-- Stack : Spring Data REST, JPA (H2 en mémoire), clients Eureka/Config.
-- Port : 8083.
-- Données : 3 produits (IDs UUID) pré-chargés.
-- API : `/api/products` (IDs exposées).
+3) Services metier (apres que discovery + config soient up) :
+```bash
+cd customer-service   && mvn spring-boot:run
+cd inventory-service  && mvn spring-boot:run
+cd billing-service    && mvn spring-boot:run
+```
 
-### billing-service
-- Stack : Spring Web + Data JPA (H2), OpenFeign, clients Eureka/Config.
-- Port : 8082.
-- Démarrage : récupère clients/produits via Feign et génère des factures + lignes.
-- API `/bills` :
-  - `GET /bills` : liste enrichie (client + produit).
-  - `GET /bills/{id}` : détail enrichi.
-  - `POST /bills` : création `{ customerId, items: [{ productId, quantity }] }`.
+4) Gateway :
+```bash
+cd gateway-service
+mvn spring-boot:run
+```
 
-### ecom-web-app (Angular)
-- Stack : Angular standalone + Angular Material.
-- Consommation via passerelle `http://localhost:8888/*`.
-- Routes : `/products`, `/products/new`, `/products/edit/:id`, `/customers`, `/bills`.
-- Fonctionnalités : CRUD produits, liste clients, création/liste factures.
+5) Front-end (dev) :
+```bash
+cd ecom-web-app
+npm install
+npm start
+```
+ANGULAR tourne sur http://localhost:4200 et interroge la gateway en http://localhost:8888.
 
-## Lancement local (ordre conseillé)
-1) Discovery : `cd discovery-service && mvn spring-boot:run`
-2) Config : `cd config-service && mvn spring-boot:run`
-3) Services métiers (une fois discovery+config prêts) :
-   - `customer-service` : `mvn spring-boot:run`
-   - `inventory-service` : `mvn spring-boot:run`
-   - `billing-service` : `mvn spring-boot:run`
-4) Gateway : `cd gateway-service && mvn spring-boot:run`
-5) Front-end : `cd ecom-web-app && npm install && npm start` (Angular dev server sur 4200).
-
-Notes :
-- Chaque service utilise H2 en mémoire ; données perdues au redémarrage.
-- Le peuplement de billing nécessite customer/inventory déjà disponibles.
-- Activer CORS sur la passerelle/les services pour les appels depuis le dev server Angular.
-
-## Ports & URLs (défaut)
-- Discovery : http://localhost:8761/
-- Config Server : http://localhost:9999/
+## URLs utiles
+- Eureka dashboard : http://localhost:8761/
+- Config Server health : http://localhost:9999/actuator/health
 - Gateway : http://localhost:8888/
-- API Clients : http://localhost:8081/api/customers
-- API Produits : http://localhost:8083/api/products
-- API Facturation : http://localhost:8082/bills
-- Angular (dev) : http://localhost:4200/
+-  Clients : http://localhost:8081/api/customers
+-  Produits : http://localhost:8083/api/products
+-  Factures : http://localhost:8082/bills
+- Front-end  : http://localhost:4200/
 
-## Dépendances
-- Java 21.
-- Spring Boot 3.5.x, Spring Cloud 2025.x.
-- H2 en mémoire.
-- OpenFeign pour les appels cross-service.
-- Angular + Material, parsing HAL pour Spring Data REST.
-
-## Points opérationnels
-- CORS : nécessaire pour le front (port 4200).
-- Découverte Gateway : vérifier les propriétés locator activées.
-- Chemin de config `file:../config-repo` dépend du layout ; adapter en conteneurisation.
-- Tests : uniquement stubs de chargement de contexte ; ajouter des tests d'API/intégration pour la fiabilité.
-
-## Modèle de données (rapide)
-- Customer : `id`, `name`, `email`.
-- Product : `id` (UUID), `name`, `price`, `quantity`.
-- Bill : `id`, `billingDate`, `customerId`, `productItems[]`.
-- ProductItem : `id`, `productId`, `quantity`, `unitPrice`.
-
-## Astuces de développement
-- Démarrer discovery + config en premier pour éviter les erreurs Feign/config.
-- Ajuster les URLs d'API Angular via les fichiers d'environnement si le host/port gateway change.
-- Si des caractères apparaissent corrompus dans l'UI, vérifier l'encodage UTF-8 des fichiers et corriger les libellés.
+## Notes operationnelles
+- CORS : autoriser le front (port 4200) sur la gateway/les services si besoin.
+- Config path : en conteneurisation/CI, ajuster le backend `file:../config-repo` selon le layout.
+- Donnees : H2 en memoire, les seeds sont recrees a chaque demarrage.
+- Tests : principalement des tests de chargement de contexte ; ajouter des tests d'API/integration pour fiabiliser.
