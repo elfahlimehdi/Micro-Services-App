@@ -109,7 +109,8 @@ Front (affiche la facture)
 <img width="2829" height="1567" alt="Capture d&#39;écran 2025-11-26 004213" src="https://github.com/user-attachments/assets/e4738103-a50c-4504-84a3-f967dabee81e" />
 <img width="2839" height="1571" alt="Capture d&#39;écran 2025-11-26 004220" src="https://github.com/user-attachments/assets/f44ece7d-1da8-4022-9ece-1778cf993265" />
 <img width="2825" height="1565" alt="Capture d&#39;écran 2025-11-26 004235" src="https://github.com/user-attachments/assets/d5d9d572-e25c-42aa-88de-b7dfe4f5f252" />
-<img width="2825" height="1565" alt="Capture d&#39;écran 2025-11-26 004235" src="https://github.com/user-attachments/assets/4093f3d2-fdcb-483d-b16b-5125479dfbe9" />
+<img width="2854" height="959" alt="Capture d&#39;écran 2025-11-26 004240" src="https://github.com/user-attachments/assets/47ebd862-2057-496e-a74a-d177dd194a82" />
+
 
 
 - customer-service (API/console):
