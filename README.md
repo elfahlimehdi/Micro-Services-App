@@ -13,7 +13,7 @@ Ensemble Spring Cloud (Eureka, Config Server, Gateway, microservices metier) + f
 - ecom-web-app/ : front Angular Material (dev server 4200) qui consomme via la gateway.
 - .mvn/, pom.xml : build Maven parent.
 
-## Architecture (texte)
+## Architecture 
 - Decouverte : tous les services (gateway incluse) s'enregistrent dans Eureka.
 - Configuration : config-service sert les properties depuis `../config-repo`.
 - Routage : gateway utilise le discovery locator (IDs en lowercase) pour exposer `/customer-service/**`, `/inventory-service/**`, `/billing-service/**`.
