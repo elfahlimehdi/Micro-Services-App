@@ -20,6 +20,8 @@ Ensemble Spring Cloud (Eureka, Config Server, Gateway, microservices metier) + f
 - Donnees : chaque service utilise H2 en memoire, population d'exemple au demarrage (donnees perdues apres restart).
 - Communication : billing-service appelle customer/inventory via OpenFeign.
 
+## Diagrammes (ASCII, compatibles GitHub)
+
 ### Vue globale (front + backend)
 ```
                          +--------------------------+
@@ -96,6 +98,15 @@ Gateway
     v
 Front (affiche la facture)
 ```
+
+## Captures d'ecran (placeholders)
+- ecom-web-app (UI)
+- gateway-service (routes)
+- customer-service (API/console)
+- inventory-service (API/console)
+- billing-service (API/console)
+- discovery-service (Eureka dashboard)
+- config-service (actuator/health)
 
 ## Prerequis
 - Java 21
