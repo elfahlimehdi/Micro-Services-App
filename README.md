@@ -101,12 +101,32 @@ Front (affiche la facture)
 
 ## Captures d'ecran (placeholders)
 - ecom-web-app (UI)
-- gateway-service (routes)
-- customer-service (API/console)
-- inventory-service (API/console)
-- billing-service (API/console)
-- discovery-service (Eureka dashboard)
-- config-service (actuator/health)
+- <img width="2850" height="882" alt="image" src="https://github.com/user-attachments/assets/bfbb8cda-ccc4-4a59-af51-dd7b0ef01a27" />
+<img width="1308" height="911" alt="image" src="https://github.com/user-attachments/assets/12de810e-b9e9-4f86-896e-c906eba527fc" />
+<img width="2856" height="984" alt="image" src="https://github.com/user-attachments/assets/0bed542b-d9cb-48bd-a269-c02220c57ab1" />
+<img width="2870" height="1309" alt="Capture d&#39;écran 2025-11-26 004142" src="https://github.com/user-attachments/assets/2da62281-92cf-49ba-87ed-ac0af7e758f4" />
+<img width="2846" height="1394" alt="Capture d&#39;écran 2025-11-26 004149" src="https://github.com/user-attachments/assets/c97a07b9-bd6c-4dcc-97cd-3f8164c6e267" />
+<img width="2829" height="1567" alt="Capture d&#39;écran 2025-11-26 004213" src="https://github.com/user-attachments/assets/e4738103-a50c-4504-84a3-f967dabee81e" />
+<img width="2839" height="1571" alt="Capture d&#39;écran 2025-11-26 004220" src="https://github.com/user-attachments/assets/f44ece7d-1da8-4022-9ece-1778cf993265" />
+<img width="2825" height="1565" alt="Capture d&#39;écran 2025-11-26 004235" src="https://github.com/user-attachments/assets/d5d9d572-e25c-42aa-88de-b7dfe4f5f252" />
+<img width="2825" height="1565" alt="Capture d&#39;écran 2025-11-26 004235" src="https://github.com/user-attachments/assets/4093f3d2-fdcb-483d-b16b-5125479dfbe9" />
+
+
+- customer-service (API/console):
+- <img width="1075" height="1724" alt="image" src="https://github.com/user-attachments/assets/3e35bc37-f9aa-42c4-b5f1-06d1db5b4011" />
+
+- inventory-service (API/console):
+- <img width="1384" height="1694" alt="image" src="https://github.com/user-attachments/assets/b3077fe2-cbc7-4f31-8187-f655bb45fee7" />
+
+- billing-service (API/console):
+  - <img width="918" height="1693" alt="Capture d&#39;écran 2025-11-25 235326" src="https://github.com/user-attachments/assets/50fba147-bc90-4914-906a-9ad2611a2552" />
+
+- discovery-service (Eureka dashboard):
+  - <img width="2830" height="1390" alt="Capture d&#39;écran 2025-11-25 233020" src="https://github.com/user-attachments/assets/f21f6f95-cae4-4f50-bea2-008a9241f218" />
+  
+- config-service (actuator/health):
+- <img width="1015" height="273" alt="image" src="https://github.com/user-attachments/assets/8c46ff32-d3fc-4b2d-8dae-c9f308a042ee" />
+
 
 ## Prerequis
 - Java 21
