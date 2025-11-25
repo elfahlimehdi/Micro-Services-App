@@ -142,7 +142,6 @@ ANGULAR tourne sur http://localhost:4200 et interroge la gateway en http://local
 ## URLs utiles
 - Eureka dashboard : http://localhost:8761/
 - Config Server health : http://localhost:9999/actuator/health
-- Gateway : http://localhost:8888/billing-service/bills
 -  Clients : http://localhost:8081/api/customers
 -  Produits : http://localhost:8083/api/products
 -  Factures : http://localhost:8082/bills
