@@ -11,7 +11,6 @@ import { RouterLink } from '@angular/router';
     <mat-toolbar color="primary">
       <span>E-Commerce App</span>
       <span class="spacer"></span>
-      <button mat-button routerLink="/">Accueil</button>
       <button mat-button routerLink="/products">Produits</button>
       <button mat-button routerLink="/customers">Clients</button>
       <button mat-button routerLink="/bills">Factures</button>

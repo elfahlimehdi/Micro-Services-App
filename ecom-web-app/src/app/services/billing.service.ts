@@ -18,4 +18,8 @@ export class BillingService {
     createBill(payload: { customerId: number; items: { productId: string; quantity: number }[] }): Observable<Bill> {
         return this.http.post<Bill>(this.apiUrl, payload);
     }
+
+    deleteBill(id: number): Observable<void> {
+        return this.http.delete<void>(`${this.apiUrl}/${id}`);
+    }
 }

@@ -9,11 +9,15 @@ import org.example.billingservice.model.Product;
 import org.example.billingservice.repository.BillRepository;
 import org.example.billingservice.repository.ProductItemRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Date;
 import java.util.List;
@@ -31,13 +35,15 @@ public class BillRestController {
     private ProductRestClient productRestClient;
 
     @GetMapping(path = "/bills")
+    @Transactional(readOnly = true)
     public List<Bill> getBills(){
         return billRepository.findAll().stream()
-                .map(this::enrichBill)
+                .map(this::enrichBillSafe)
                 .collect(Collectors.toList());
     }
 
     @GetMapping(path = "/bills/{id}")
+    @Transactional(readOnly = true)
     public Bill getBill(@PathVariable Long id){
         Bill bill = billRepository.findById(id).get();
         return enrichBill(bill);
@@ -57,12 +63,25 @@ public class BillRestController {
 
         List<ProductItem> items = request.items().stream().map(item -> {
             Product product = productRestClient.getProductById(item.productId());
+            if (item.quantity() <= 0) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "La quantite doit etre positive pour le produit " + product.getName());
+            }
+            if (item.quantity() > product.getQuantity()) {
+                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                        "Stock insuffisant pour " + product.getName() + " (demande " + item.quantity() + ", disponible " + product.getQuantity() + ")");
+            }
+            int remaining = product.getQuantity() - item.quantity();
+            product.setQuantity(remaining);
+            // Mettre à jour le stock dans inventory-service
+            productRestClient.updateProduct(product.getId(), product);
+
             ProductItem productItem = ProductItem.builder()
                     .bill(bill)
                     .productId(product.getId())
                     .quantity(item.quantity())
                     .unitPrice(product.getPrice())
                     .build();
+            productItem.setProduct(product); // expose product details in response
             return productItemRepository.save(productItem);
         }).toList();
 
@@ -71,15 +90,28 @@ public class BillRestController {
         return bill;
     }
 
+    @DeleteMapping(path = "/bills/{id}")
+    public void deleteBill(@PathVariable Long id) {
+        billRepository.findById(id).ifPresent(billRepository::delete);
+    }
+
     private Bill enrichBill(Bill bill){
         bill.setCustomer(customerRestClient.getCustomerById(bill.getCustomerId()));
-        bill.getProductItems().forEach(productItem -> {
-            productItem.setProduct(productRestClient.getProductById(productItem.getProductId()));
-        });
+        bill.getProductItems().forEach(productItem ->
+                productItem.setProduct(productRestClient.getProductById(productItem.getProductId()))
+        );
         return bill;
+    }
+
+    private Bill enrichBillSafe(Bill bill) {
+        try {
+            return enrichBill(bill);
+        } catch (Exception e) {
+            // Si un service distant est indisponible ou renvoie 404, on retourne la facture brute
+            return bill;
+        }
     }
 
     public record CreateBillRequest(long customerId, List<CreateBillItem> items) { }
     public record CreateBillItem(String productId, int quantity) { }
 }
-

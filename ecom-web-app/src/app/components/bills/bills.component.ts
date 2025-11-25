@@ -9,11 +9,13 @@ import { ProductService } from '../../services/product.service';
 import { Bill } from '../../models/bill.interface';
 import { Customer } from '../../models/customer.interface';
 import { Product } from '../../models/product.interface';
+import { MatIconModule } from '@angular/material/icon';
+import { MatTooltipModule } from '@angular/material/tooltip';
 
 @Component({
   selector: 'app-bills',
   standalone: true,
-  imports: [CommonModule, FormsModule, MatTableModule, MatButtonModule],
+  imports: [CommonModule, FormsModule, MatTableModule, MatButtonModule, MatIconModule, MatTooltipModule],
   template: `
     <div class="page">
       <h2>Factures</h2>
@@ -68,8 +70,33 @@ import { Product } from '../../models/product.interface';
           <td mat-cell *matCellDef="let bill">{{ getTotal(bill) | currency:'EUR' }}</td>
         </ng-container>
 
+        <ng-container matColumnDef="items">
+          <th mat-header-cell *matHeaderCellDef>Produits</th>
+          <td mat-cell *matCellDef="let bill">
+            <div class="items-list">
+              <div *ngFor="let item of bill.productItems">
+                {{ item.product?.name || item.productId }} — {{ item.quantity }} x {{ item.unitPrice | currency:'EUR' }}
+              </div>
+            </div>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef class="actions-header">
+            <mat-icon aria-hidden="true">more_horiz</mat-icon>
+          </th>
+          <td mat-cell *matCellDef="let bill">
+            <button mat-icon-button color="primary" matTooltip="Editer (bientôt)" aria-label="Editer">
+              <mat-icon>edit</mat-icon>
+            </button>
+            <button mat-icon-button color="warn" (click)="deleteBill(bill.id)" matTooltip="Supprimer" aria-label="Supprimer">
+              <mat-icon>delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;" class="bill-row"></tr>
       </table>
     </div>
   `,
@@ -83,11 +110,12 @@ import { Product } from '../../models/product.interface';
     .item-row { display: flex; gap: 8px; align-items: center; }
     select, input { padding: 6px; min-width: 180px; }
     .actions { margin-top: 10px; }
+    .actions-header { text-align: center; width: 80px; }
   `]
 })
 export class BillsComponent implements OnInit {
   bills: Bill[] = [];
-  displayedColumns: string[] = ['id', 'date', 'customer', 'total'];
+  displayedColumns: string[] = ['id', 'date', 'customer', 'total', 'items', 'actions'];
   errorMessage = '';
   customers: Customer[] = [];
   products: Product[] = [];
@@ -147,7 +175,9 @@ export class BillsComponent implements OnInit {
         this.bills = [bill, ...this.bills];
         this.newBill = { customerId: null, items: [{ productId: '', quantity: 1 }] };
       },
-      error: () => this.errorMessage = 'Erreur lors de la création de la facture'
+      error: err => {
+        this.errorMessage = err?.error?.message || 'Erreur lors de la création de la facture';
+      }
     });
   }
 
@@ -155,6 +185,15 @@ export class BillsComponent implements OnInit {
     this.billingService.getBills().subscribe({
       next: data => this.bills = data,
       error: () => this.errorMessage = 'Erreur lors du chargement des factures'
+    });
+  }
+
+  deleteBill(id: number): void {
+    this.billingService.deleteBill(id).subscribe({
+      next: () => {
+        this.bills = this.bills.filter(b => b.id !== id);
+      },
+      error: () => this.errorMessage = 'Erreur lors de la suppression de la facture'
     });
   }
 }

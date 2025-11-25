@@ -21,4 +21,14 @@ export class CustomerService {
             })
         );
     }
+
+    createCustomer(payload: { name: string; email: string }): Observable<Customer> {
+        return this.http.post<any>(this.apiUrl, payload).pipe(
+            map(response => ({
+                id: response.id,
+                name: response.name,
+                email: response.email
+            } satisfies Customer))
+        );
+    }
 }
